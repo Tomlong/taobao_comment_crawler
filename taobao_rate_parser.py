@@ -94,10 +94,10 @@ def parse_comment_to_db(job):
     comment_datas = comment.find_all("tr")
 
     parse_datas = parse_comment(comment_datas, job)
+
     # insert data to DB
-    rate_comment_collection.insert_many(parse_datas)
-
-
+    if len(parse_datas) != 0:
+        rate_comment_collection.insert_many(parse_datas)
 
 def main():
     try:
