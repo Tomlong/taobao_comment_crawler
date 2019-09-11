@@ -1,0 +1,35 @@
+version: '2'
+services:
+    product_url_crawler:
+        image: product_url_crawler
+        build:
+            context: ./
+            dockerfile: ./docker/product_url_crawler/Dockerfile
+        environment:
+            - MONGODB=mongodb://database
+        restart: always
+    rate_page_crawler:
+        image: rate_page_crawler
+        build:
+            context: ./
+            dockerfile: ./docker/rate_page_crawler/Dockerfile
+        environment:
+            - MONGODB=mongodb://database
+        restart: always
+    rate_page_parser:
+        image: rate_page_parser
+        build:
+            context: ./
+            dockerfile: ./docker/rate_page_parser/Dockerfile
+        environment:
+            - MONGODB=mongodb://database
+        restart: always
+    database:
+        image: mongo:3.6
+        volumes:
+            - mongodb:/data/db
+        restart: always
+        ports:
+            - 27017
+volumes:
+    mongodb:
