@@ -72,7 +72,7 @@ def _crawl_rate_page(driver, job):
 
         try:
             driver.find_element_by_css_selector('#J_Reviews > div > div.rate-page > div > a:last-child').click()
-            time.sleep(3)
+            time.sleep(10)
         except:
             # 找不到下一頁
             break
@@ -84,7 +84,7 @@ def crawl_rate_page(driver, job):
         driver.get(product_url)
         # 判斷是否有評論的Tab
         WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.ID, "J_TabBarBox")))
-        time.sleep(2)
+        time.sleep(5)
     except TimeoutException:
         logging.info('未找到評論Tab')
         return
@@ -93,14 +93,14 @@ def crawl_rate_page(driver, job):
         # 頁面scroll至800位置，看到評論Tab，模擬人的動作
         js = "window.scrollTo(0,800)"
         driver.execute_script(js)
-        time.sleep(5)
+        time.sleep(10)
     except WebDriverException:
         logging.info('頁面Scroll出問題')
         return
 
     try:
         driver.find_element_by_xpath('//*[@id="J_TabBar"]/li[2]').click()
-        time.sleep(5)
+        time.sleep(10)
         logging.info('點擊累計評論Tab成功')
     except:
         logging.info('沒有累計評論的Tab')
@@ -156,7 +156,7 @@ def main():
         else:
             logging.info('Waiting for new product url')
     
-        time.sleep(5)
+        time.sleep(10)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
