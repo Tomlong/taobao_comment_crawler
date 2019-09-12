@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
@@ -71,11 +72,19 @@ def _crawl_rate_page(driver, job):
             })
 
         try:
+            swipe_down(driver, 1.2)
             driver.find_element_by_css_selector('#J_Reviews > div > div.rate-page > div > a:last-child').click()
-            time.sleep(10)
+            time.sleep(5)
         except:
             # 找不到下一頁
             break
+
+def swipe_down(driver, second):
+    for i in range(int(second/0.1)):
+        js = "window.scrollBy(0,250)"
+        driver.execute_script(js)
+        time.sleep(0.2)
+
 
 def crawl_rate_page(driver, job):
     timeout = 20
@@ -84,27 +93,44 @@ def crawl_rate_page(driver, job):
         driver.get(product_url)
         # 判斷是否有評論的Tab
         WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.ID, "J_TabBarBox")))
-        time.sleep(5)
+        time.sleep(2)
     except TimeoutException:
         logging.info('未找到評論Tab')
         return
 
     try:
-        # 頁面scroll至800位置，看到評論Tab，模擬人的動作
-        js = "window.scrollTo(0,800)"
-        driver.execute_script(js)
-        time.sleep(10)
+        # 頁面scrol，看到評論Tab，模擬人的動作
+        swipe_down(driver, 0.3)
+    
     except WebDriverException:
         logging.info('頁面Scroll出問題')
         return
 
     try:
         driver.find_element_by_xpath('//*[@id="J_TabBar"]/li[2]').click()
-        time.sleep(10)
+        time.sleep(5)
         logging.info('點擊累計評論Tab成功')
     except:
         logging.info('沒有累計評論的Tab')
         return
+    
+    
+    try:
+        iframe_list = driver.find_elements_by_tag_name('iframe')
+        # 出現滑動驗證
+        if len(iframe_list) == 3:
+            driver.switch_to_frame(iframe_list[-1])
+        WebDriverWait(driver, 10, 0.5).until(EC.presence_of_element_located((By.ID, "nc_1_n1z"))) #等待滑动拖动控件出现
+        swipe_button = driver.find_element_by_id('nc_1_n1z') #获取滑动拖动控件
+
+        #模拟拽托
+        action = ActionChains(driver) # 实例化一个action对象
+        action.click_and_hold(swipe_button).perform() # perform()用来执行ActionChains中存储的行为
+        action.reset_actions()
+        action.move_by_offset(580, 0).perform() # 移动滑块
+
+    except Exception as e:
+        print ('get button failed: ', e)
     
     try:
         driver.find_element_by_xpath('//*[@id="J_Reviews"]/div/div[@class="rate-grid"]')
@@ -124,7 +150,8 @@ def login():
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--disable-gpu')
-    driver = webdriver.Chrome(chrome_options=chrome_options)
+    chrome_options.add_experimental_option('excludeSwitches', ['enable-automation']) 
+    driver = webdriver.Chrome('./chromedriver', options = chrome_options)
 
     driver.implicitly_wait(10)
     driver.get(login_st_url)
@@ -142,6 +169,7 @@ def main():
     # 登入
     driver = login()
     logging.info('login success')
+    time.sleep(5)
 
     # 爬取 rate page
     product_urls_db = TAOBAO_URL_DB['product_url']
