@@ -2,7 +2,7 @@ import os
 import urllib
 
 VST_URL = 'https://login.taobao.com/member/vst.htm?st={}'
-MONGO_URI = os.environ.get('MONGODB', 'localhost:27017')
+MONGO_URI = os.environ.get('MONGODB', '192.168.3.21:32975')
 PROXIES = {'http':'http:/122.117.138.228:80'}
 LOGIN_URL = 'https://login.taobao.com/member/login.html'
 LOGIN_HEADERS =  {
