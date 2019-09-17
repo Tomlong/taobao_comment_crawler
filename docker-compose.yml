@@ -7,16 +7,16 @@ services:
             dockerfile: ./docker/product_url_crawler/Dockerfile
         environment:
             - MONGODB=mongodb://database
-        restart: always
-    rate_page_crawler:
-        image: rate_page_crawler
-        build:
-            context: ./
-            dockerfile: ./docker/rate_page_crawler/Dockerfile
-        environment:
-            - MONGODB=mongodb://database
-            - PYTHONIOENCODING=utf-8
-        restart: always
+        restart: always    
+    #rate_page_crawler:
+    #    image: rate_page_crawler
+    #    build:
+    #        context: ./
+    #        dockerfile: ./docker/rate_page_crawler/Dockerfile
+    #    environment:
+    #        - MONGODB=mongodb://database
+    #        - PYTHONIOENCODING=utf-8
+    #    restart: always
     rate_page_parser:
         image: rate_page_parser
         build:
@@ -31,6 +31,6 @@ services:
             - mongodb:/data/db
         restart: always
         ports:
-            - 27017
+            - 32975:27017
 volumes:
     mongodb:
