@@ -15,6 +15,7 @@ services:
             dockerfile: ./docker/rate_page_crawler/Dockerfile
         environment:
             - MONGODB=mongodb://database
+            - PYTHONIOENCODING=utf-8
         restart: always
     rate_page_parser:
         image: rate_page_parser

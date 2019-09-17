@@ -1,5 +1,6 @@
+aiohttp
 bs4
 pandas
 pymongo
+pyppeteer
 requests
-selenium
