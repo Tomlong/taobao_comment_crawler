@@ -10,11 +10,11 @@ from bs4 import BeautifulSoup
 from pyppeteer import launch
 
 from utils import slide_list
-from rate_crawler_config import PROXIES, LOGIN_HEADERS, LOGIN_URL, POST_DATA, MONGO_URI, VST_URL
+from config.rate_crawler_config import PROXIES, LOGIN_HEADERS, LOGIN_URL, POST_DATA, MONGO_URI, VST_URL
 
 logger = logging.getLogger(__name__)
 
-MAX_PAGE = 50
+MAX_PAGE = 5
 session = requests.Session()
 session.proxies = PROXIES
 
@@ -72,7 +72,10 @@ async def _crawl_rate_page(page, job):
         try:
             next_page = await page.J('#J_Reviews > div > div.rate-page > div > a:last-child')
             await next_page.click()
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
+            # 點擊下一頁，有被擋的可能
+            await check_pass_evaluate(page)
+            await asyncio.sleep(3)
         except:
             logger.info('找不到下一頁')
             break
@@ -82,45 +85,46 @@ async def check_pass_evaluate(page):
     if len(page.frames) == 4:
         logger.info('出現驗證')
         frame_list = page.frames
+        # 切換至驗證的frame
         evaluate_frame = frame_list[3]
-        await evaluate_frame.Jeval('#nocaptcha', 'node => node.style')
+        # 點選滑塊
         await evaluate_frame.hover('#nc_1_n1z')
-        
-        logger.info('開始破解驗證')
+
+        logger.info('破解驗證開始')
         await page.mouse.down()
+        # 產生滑動位置參數
         slides = slide_list(260)
-        logger.info(f'{slides}')
         x = page.mouse._x
+        # 開始滑動
         for distance in slides:
             x += distance
             await page.mouse.move(x, 0, )
         await page.mouse.up()
+        await asyncio.sleep(2)
+        try:
+            # 若找得到滑塊上的字，代表驗證失敗，驗證視窗還在
+            await evaluate_frame.Jeval('.nc-lang-cnt', 'node => node.textContent')
+            logger.info('破解驗證失敗')
+        except:
+            logger.info('破解驗證成功')
+        return True
         
-        logger.info('完成破解驗證')
-        await asyncio.sleep(5)
-        logger.info(f'{page.frames}')
-        await page.reload()
-        await asyncio.sleep(5)
-        logger.info('重新讀取')
-        await click_rate(page)
     else:
         logger.info('未出現驗證')
+        return False
 
 async def click_rate(page):
-    timeout = 10
     try:
         await asyncio.sleep(5)
         # 按累計評論
         comment_button = await page.Jx('//*[@id="J_TabBar"]/li[2]')
-        logging.info(f'按累計評論{comment_button}')
         await comment_button[0].click()
         await asyncio.sleep(3)
-    except Exception as e:
-        logging.info(f'按累計評論Tab失敗{e}')
+    except:
+        logging.info(f'按累計評論Tab失敗')
         return
 
 async def crawl_rate_page(page, job):
-    timeout = 10
     product_url = job['product_url']
     await page.goto(product_url)
     await click_rate(page)
@@ -128,7 +132,14 @@ async def crawl_rate_page(page, job):
     # 等待是否有驗證frame
     await asyncio.sleep(5)
     try:
-        await check_pass_evaluate(page)
+        is_evaluate = await check_pass_evaluate(page)
+        # 若有出現驗證，驗證破解後，需重新整理
+        if is_evaluate:
+            # 重新整理
+            await page.reload()
+            await asyncio.sleep(5)
+            # 重新點擊累計評論
+            await click_rate(page)
 
     except Exception as e:
         print ('驗證失敗 ', e)
@@ -150,25 +161,12 @@ async def login():
 
     # driver setup
     launch_kwargs = {
-        "headless": True,
-        'args': [
-            '--no-sandbox',
-        ],
+        "headless": False,
     }
 
     browser = await launch(launch_kwargs)
     page = await browser.newPage()
     await page.goto(login_st_url)
-
-    '''chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-automation']) 
-    driver = webdriver.Chrome(options = chrome_options)
-
-    driver.implicitly_wait(10)
-    driver.get(login_st_url)'''
 
     return page
 
