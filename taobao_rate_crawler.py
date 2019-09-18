@@ -202,9 +202,15 @@ def main():
         logging.info('MongoDB connect failed')
         exit()
     
-    loop = asyncio.get_event_loop()
-    task = asyncio.ensure_future(start())
-    loop.run_until_complete(task)
+    while(True):
+        loop = asyncio.get_event_loop()
+        task = asyncio.ensure_future(start())
+        try:
+            loop.run_until_complete(task)
+        except Exception as e:
+            logger.info(f'Error: {e}')
+        
+        time.sleep(5)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
